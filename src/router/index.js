@@ -7,7 +7,7 @@ import dashboard from "@/views/admin/admin_dashboard.vue";
 // dashboard child components
 import dashboard_cont from "@/components/admin/overview/dashboard_content.vue";
 import reports_cont from "@/components/admin/reports/reports_content.vue";
-import settings_cont from "@/components/admin/settings_content.vue";
+import settings_cont from "@/components/admin/settings/settings_content.vue";
 import forecast_cont from "@/components/admin/weather/forecast_content.vue";
 import post_cont from "@/components/admin/post/post_content.vue";
 

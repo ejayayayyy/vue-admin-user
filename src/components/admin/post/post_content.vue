@@ -16,7 +16,8 @@
 
             <div>
                 <!-- mini navigation -->
-                <div class=" w-full rounded mb-4 flex items-center justify-center xl:hidden p-4 xl:p-0 bg-white dark:bg-gray-700 xl:bg-none border border-gray-300 dark:border-gray-500 xl:border-none ">
+                <div
+                    class=" w-full rounded mb-4 flex items-center justify-center xl:hidden p-4 xl:p-0 bg-white dark:bg-gray-700 xl:bg-none border border-gray-300 dark:border-gray-500 xl:border-none ">
                     <!-- manage -->
                     <button
                         class="w-auto text-gray-900 rounded bg-white dark:bg-gray-500 dark:text-white group shadow text-sm px-4 py-2  flex items-center justify-center"
@@ -131,7 +132,7 @@
                                 placeholder="Search..." required />
 
                             <button type="submit"
-                                class="text-white absolute end-0 bottom-0 h-full bg-gray-500 hover:bg-gray-600 font-medium text-sm px-4 rounded">
+                                class="text-white absolute end-0 bottom-0 h-full dark:bg-gray-500  hover:bg-gray-600 font-medium text-sm px-4 rounded">
                                 <svg class="w-4 h-4 text-gray-800 dark:text-white" aria-hidden="true"
                                     xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
                                     viewBox="0 0 24 24">
@@ -162,7 +163,7 @@
                     class="bg-white dark:bg-gray-700 w-full p-5 rounded mb-4 shadow border border-gray-300 dark:border-gray-500">
                     <!-- Header -->
                     <div class="flex items-center justify-between">
-                        <div class="flex space-x-3">
+                        <div class="flex gap-3">
                             <img src="../../../../public/img/naujan-lgu-logo.png" class="h-11 w-11" alt="Logo">
                             <div class="flex flex-col">
                                 <p class="font-semibold">MDRRMO</p>
@@ -231,13 +232,13 @@
 
                     <!-- Content -->
                     <div class="flex my-4 flex-col">
-                        <div class="text-xl md:text-2xl font-bold mb-2">{{ postTitle }}</div>
+                        <div class="text-xl md:text-2xl font-bold mb-2">{{ props.postTitle }}</div>
 
                         <!-- description -->
                         <div
                             class="text-sm flex flex-col items-center text-justify mb-4 text-gray-700 dark:text-gray-300">
                             <span ref="descriptionRef" :class="isExpandedDesc ? '' : 'line-clamp-3'">
-                                {{ postContent }}
+                                {{ props.postContent }}
                             </span>
 
                             <button v-if="isTruncatedDesc" @click="toggleExpandDesc"
@@ -304,15 +305,15 @@
                         <!-- map -->
                         <div class=" mt-4 z-0">
                             <h2 class="font-bold text-xl md:text-2xl mb-2">Location</h2>
-                            <div  class="text-base mb-4 text-gray-700 dark:text-gray-300">
-                                Coordinates: <span class="font-semibold dark:text-white">(latitude.longtitude)</span>
+                            <div class="text-base mb-4 text-gray-700 dark:text-gray-300">
+                                Coordinates: <span class="font-semibold dark:text-white">({{ props.locationLat }}, {{ props.locationLng }})</span>
                             </div>
                             <div
                                 class="map-container h-[300px] md:h-[400px] flex rounded overflow-hidden border border-gray-300 dark:border-gray-500">
-                                <l-map :zoom="zoom" :center="[locationLat, locationLng]"
+                                <l-map :zoom="mapSettings.zoom" :center="mapSettings.center"
                                     style="height: 100%; width: 100%;">
-                                    <l-tile-layer :url="tileLayer" :attribution="attribution" />
-                                    <l-marker :lat-lng="[locationLat, locationLng]" />
+                                    <l-tile-layer :url="mapSettings.tileLayer" :attribution="mapSettings.attribution" />
+                                    <l-marker :lat-lng="[props.locationLat, props.locationLng]" />
                                 </l-map>
                             </div>
                         </div>
@@ -327,7 +328,114 @@
     </div>
 </template>
 
-<script>
+<script setup>
+// imports
+import { ref, reactive, onMounted, onBeforeUnmount, computed, nextTick, defineProps } from 'vue';
+import { LMap, LTileLayer, LMarker } from "vue3-leaflet";
+import "leaflet/dist/leaflet.css";
+import manage_post_component from '@/components/admin/post/manage_post_content.vue';
+import notification_component from '@/components/admin/post/notification_content.vue';
+import edit_post_component from '@/components/admin/post/edit_post_content.vue';
+import delete_post_component from '@/components/admin/post/delete_post_content.vue';
+
+// props or default value
+const props = defineProps({
+    postTitle: {
+        type: String,
+        default: 'Title',
+    },
+    postContent: {
+        type: String,
+        default: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex soluta quis maxime fuga facere itaque? Nostrum, illum hic! Rerum fugiat facilis excepturi numquam repudiandae iure, cupiditate eius commodi adipisci quam!",
+    },
+    locationLat: {
+        type: Number,
+        default: 13.2376,
+    },
+    locationLng: {
+        type: Number,
+        default: 121.2397,
+    },
+});
+
+// variables
+const isExpandedDesc = ref(false);
+const isTruncatedDesc = ref(false);
+const isExpandedPic = ref(false);
+const isLightboxOpen = ref(false);
+const lightboxIndex = ref(0);
+const descriptionRef = ref(null);
+
+const photos = reactive([
+    'https://via.placeholder.com/800',
+    'https://via.placeholder.com/600',
+    'https://via.placeholder.com/400',
+    'https://via.placeholder.com/400',
+    'https://via.placeholder.com/400',
+]);
+
+const mapSettings = reactive({
+    zoom: 13,
+    center: [props.locationLat, props.locationLng],
+    tileLayer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: '&copy; OpenStreetMap contributors',
+});
+
+// functions
+// this is for the show more/show less button when text are truncated
+onMounted(() => {
+    checkDescTruncated();
+    window.addEventListener('resize', checkDescTruncated);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', checkDescTruncated);
+});
+
+// this is for photos
+const displayedPhotos = computed(() => (isExpandedPic.value ? photos : photos.slice(0, 4)));
+const extraPhotos = computed(() => (photos.length > 4 ? photos.length - 4 : 0));
+const remainingPhotos = computed(() => (isExpandedPic.value ? photos.slice(photos.length) : []));
+
+function toggleExpandDesc() {
+    isExpandedDesc.value = !isExpandedDesc.value;
+}
+
+function checkDescTruncated() {
+    nextTick(() => {
+        const description = descriptionRef.value;
+        if (description) {
+            isTruncatedDesc.value = description.scrollHeight > description.clientHeight;
+        }
+    });
+}
+
+function toggleExpandPic() {
+    isExpandedPic.value = !isExpandedPic.value;
+}
+
+function openLightbox(index) {
+    lightboxIndex.value = index;
+    isLightboxOpen.value = true;
+}
+
+function closeLightbox() {
+    isLightboxOpen.value = false;
+}
+
+function nextPhoto() {
+    lightboxIndex.value = (lightboxIndex.value + 1) % photos.length;
+}
+
+function prevPhoto() {
+    lightboxIndex.value = (lightboxIndex.value - 1 + photos.length) % photos.length;
+}
+</script>
+
+
+
+
+<!-- <script>
 
 import { LMap, LTileLayer, LMarker } from "vue3-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -468,4 +576,4 @@ export default {
         },
     }
 };
-</script>
+</script> -->

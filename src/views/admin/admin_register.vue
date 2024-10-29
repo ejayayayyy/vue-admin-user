@@ -16,7 +16,7 @@
           <label class="block text-gray-700">Confirm Password</label>
           <input v-model="confirmPassword" type="password" class="w-full px-4 py-2 border rounded" required />
         </div>
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Register</button>
+        <button type="submit" class="w-full text-white bg-blue-600 hover:bg-blue-700  font-medium rounded text-sm px-4 py-2 text-center">Register</button>
       </form>
     </div>
   </div>

@@ -199,14 +199,14 @@
     </div>
 </template>
 
-<script>
+<script setup>
 import add_new_post_component from '@/components/admin/post/add_new_post_content.vue'
 
-export default {
-    name: 'manage_post_component',
+// export default {
+//     name: 'manage_post_component',
 
-    components: {
-        add_new_post_component,
-    }
-}
+//     components: {
+//         add_new_post_component,
+//     }
+// }
 </script>

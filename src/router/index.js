@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from "vue-router";
+// main
 import login from "@/views/admin/admin_login.vue";
 import register from "@/views/admin/admin_register.vue";
 import dashboard from "@/views/admin/admin_dashboard.vue";
-// import admin_user from "@/views/admin/admin_user.vue";
+import welcome_cont from '@/views/welcome_component.vue'
+
 
 // dashboard child components
 import dashboard_cont from "@/components/admin/overview/dashboard_content.vue";
@@ -16,6 +18,12 @@ import my_profile_cont from "@/components/admin/profile/my_profile_content.vue";
 import account_settings_con from "@/components/admin/profile/account_settings_content.vue";
 
 const routes = [
+  // welcome page
+  {
+    path: '/',
+    component: welcome_cont,
+  },
+
   {
     path: "/admin/login",
     component: login,

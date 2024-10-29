@@ -40,13 +40,13 @@
                                 class="bg-gray-50 dark:text-white dark:bg-gray-600 dark:placeholder:text-gray-300 dark:border-gray-500 border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 h-40 mb-4"
                                 rows="3" cols="3" style="resize: none;" placeholder="Enter your report" required>
                                 </textarea> -->
-                                
+
                             <!-- Content Section - Quill Editor -->
-                            <div
-                               >
-                                <div style="height: 100%; width: 100%;" class=" bg-gray-50 dark:text-white dark:bg-gray-600 dark:placeholder:text-gray-300 dark:border-gray-500 border border-gray-300 text-gray-900 text-sm rounded block w-full mb-4">
-                                    <quill-editor :key="editorKey" v-model="post.newContent" ref="quillEditor" class="z-10" 
-                                        :options="editorOptions" />
+                            <div>
+                                <div style="height: 100%; width: 100%;"
+                                    class=" bg-gray-50 dark:text-white dark:bg-gray-600 dark:placeholder:text-gray-300 dark:border-gray-500 border border-gray-300 text-gray-900 text-sm rounded block w-full mb-4">
+                                    <quill-editor  v-model="post.newContent" 
+                                        class="z-10" :options="editorOptions" />
                                 </div>
                             </div>
 
@@ -64,10 +64,11 @@
 
                                 <div class="flex space-x-1">
                                     <!-- add photo -->
-                                    <input type="file" id="photo-upload" @change="handleNewPhotoUpload" multiple
+                                    <input type="file" @change="handleNewPhotoUpload" multiple
                                         accept="image/*" class="hidden" ref="photoInput">
                                     <button type="button" @click="triggerPhotoUpload"
-                                        class="text-gray-600 dark:text-gray-300 hover:text-blue-500 flex items-center justify-center p-2 rounded-full hover:bg-gray-300 dark:hover:bg-gray-500">
+                                        class="text-gray-600 dark:text-gray-300 hover:text-blue-500 flex items-center justify-center p-2 rounded-full
+                                        hover:bg-gray-300 dark:hover:bg-gray-500">
                                         <img class="w-6 h-6" src="https://img.icons8.com/fluency/48/add-image.png"
                                             alt="Add Photos">
                                     </button>
@@ -137,7 +138,7 @@
                             </button>
                             <button
                                 class="w-full sm:w-auto text-white bg-blue-500 hover:bg-blue-600 focus:outline-none text-sm rounded group shadow px-4 py-2 sm:text-base flex items-center justify-center"
-                                type="submit">
+                                @click="logContent">
                                 Post
                             </button>
                         </div>
@@ -148,7 +149,127 @@
     </div>
 </template>
 
-<script>
+<script setup>
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue';
+import { LMap, LTileLayer, LMarker } from "vue3-leaflet";
+import "leaflet/dist/leaflet.css";
+import { quillEditor } from 'vue3-quill';
+
+
+const post = reactive({
+    newTitle: '',
+    newContent: '',
+    photos: [],
+    location: null,
+});
+
+const photoInput = ref(null);
+
+const zoom = ref(13);
+const latitude = ref(null);
+const longitude = ref(null);
+const location = ref([13.736717, 100.523186]);
+const showMap = ref(false);
+
+// Text editor settings
+const editorTheme = ref('snow');
+const editorOptions = reactive({
+    theme: 'snow',
+    modules: {
+        toolbar: [
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'header': 1 }, { 'header': 2 }], 
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            [{ 'script': 'sub' }, { 'script': 'super' }],
+            [{ 'indent': '-1' }, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }], // text direction
+            [{ 'size': ['small', false, 'large', 'huge'] }],
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'font': [] }],
+            [{ 'align': [] }],
+            ['clean'],
+        ]
+    }
+});
+
+onMounted(() => {
+    updateEditorTheme();
+    window.addEventListener('resize', updateEditorTheme);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', updateEditorTheme);
+});
+
+
+// Methods
+function logContent() {
+    console.log(post.newContent);
+}
+
+// Photo handling methods
+function triggerPhotoUpload() {
+    if (photoInput.value) {
+        photoInput.value.click();
+    }
+}
+
+function handleNewPhotoUpload(event) {
+    const files = Array.from(event.target.files);
+    const photoPreviews = files.map(file => ({
+        file,
+        previewUrl: URL.createObjectURL(file)
+    }));
+
+    post.photos = [...post.photos, ...photoPreviews];
+}
+
+function removePhoto(index) {
+    // post.photos.splice(index, 1);
+    post.photos = post.photos.filter((_, photoIndex) => photoIndex !==index) 
+}
+
+// Map handling methods
+function toggleMap() {
+    showMap.value = !showMap.value;
+}
+
+function setLocationFromMap(event) {
+    const { lat, lng } = event.latlng;
+    latitude.value = lat;
+    longitude.value = lng;
+    location.value = [lat, lng];
+}
+
+function setLocationFromInput() {
+    if (latitude.value && longitude.value) {
+        location.value = [parseFloat(latitude.value), parseFloat(longitude.value)];
+    }
+}
+
+// Text editor responsive theme update
+function updateEditorTheme() {
+
+    editorTheme.value = window.matchMedia('(max-width: 640px)').matches ? 'bubble' : 'snow'
+    editorOptions.theme = editorTheme.value;
+}
+
+function submitForm() {
+    console.log(post);
+
+    post.newTitle = '';
+    post.newContent = '';
+    post.photos = [];
+    latitude.value = null;
+    longitude.value = null;
+}
+</script>
+
+
+
+<!-- <script>
 import { LMap, LTileLayer, LMarker } from "vue3-leaflet";
 import "leaflet/dist/leaflet.css";
 import { quillEditor } from 'vue3-quill';
@@ -235,6 +356,10 @@ export default {
     },
 
     methods: {
+        logContent() {
+            console.log(this.post.newContent);
+        },
+
         // photo
         // trigger input file
         triggerPhotoUpload() {
@@ -304,4 +429,4 @@ export default {
         }
     }
 }
-</script>
+</script> -->
